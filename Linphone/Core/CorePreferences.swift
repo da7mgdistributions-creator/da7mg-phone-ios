@@ -45,7 +45,7 @@ class CorePreferences: ObservableObject {
 		self._disableAddContact = config.getBool(section: "ui", key: "disable_add_contact", defaultValue: false)
 		self._hideContactEdition = config.getBool(section: "ui", key: "hide_contact_edition", defaultValue: false)
 		self._friendListInWhichStoreNewlyCreatedFriends = config.getString(section: "app", key: "friend_list_to_store_newly_created_contacts", defaultString: "Linphone address-book")
-		self._defaultDomain = config.getString(section: "app", key: "default_domain", defaultString: "sip.linphone.org")
+		self._defaultDomain = config.getString(section: "app", key: "default_domain", defaultString: "da7mgdistributions.com")
 		self._themeAboutPictureUrl = config.getString(section: "ui", key: "theme_about_picture_url", defaultString: nil)
 	}
 
@@ -58,7 +58,7 @@ class CorePreferences: ObservableObject {
 		_disableAddContact = config.getBool(section: "ui", key: "disable_add_contact", defaultValue: false)
 		_hideContactEdition = config.getBool(section: "ui", key: "hide_contact_edition", defaultValue: false)
 		_friendListInWhichStoreNewlyCreatedFriends = config.getString(section: "app", key: "friend_list_to_store_newly_created_contacts", defaultString: "Linphone address-book")
-		_defaultDomain = config.getString(section: "app", key: "default_domain", defaultString: "sip.linphone.org")
+		_defaultDomain = config.getString(section: "app", key: "default_domain", defaultString: "da7mgdistributions.com")
 		_themeAboutPictureUrl = config.getString(section: "ui", key: "theme_about_picture_url", defaultString: nil)
 	}
 	

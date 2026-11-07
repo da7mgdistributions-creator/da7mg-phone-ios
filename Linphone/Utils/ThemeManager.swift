@@ -70,10 +70,13 @@ final class ThemeManager: ObservableObject {
 		mineral_blue.name: mineral_blue
 	]
 	
+	// DA7MG: house gold #D4AF37 on black #0A0A0A (was Linphone orange
+	// #FF5E00). The app defaults to this "orange" theme, so changing it
+	// here re-colours every Color.orangeMain500 usage in the UI.
 	static let orange = Theme(
 		name: "orange",
-		main100: Color(hex: "#FFEACB"),
-		main500: Color(hex: "#FF5E00")
+		main100: Color(hex: "#F7EFD2"),
+		main500: Color(hex: "#D4AF37")
 	)
 	
 	static let yellow = Theme(

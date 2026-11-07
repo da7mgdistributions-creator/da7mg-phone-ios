@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "linphone.svg",
+      "filename" : "linphone.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "linphone.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "linphone.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

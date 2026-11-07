@@ -346,42 +346,10 @@ struct LoginFragment: View {
 			
 			Spacer()
 			
-			HStack(alignment: .center) {
-				
-				Spacer()
-				
-				Text("assistant_no_account_yet")
-					.default_text_style(styleSize: 15)
-					.foregroundStyle(Color.grayMain2c700)
-					.padding(.horizontal, 10)
-				
-				NavigationLink(destination: RegisterFragment(), isActive: $isLinkREGActive, label: { Text("assistant_account_register")
-						.default_text_style_white_600(styleSize: 20)
-						.frame(height: 35)
-				})
-				.disabled(!SharedMainViewModel.shared.generalTermsAccepted)
-				.padding(.horizontal, 20)
-				.padding(.vertical, 10)
-				.background(Color.orangeMain500)
-				.cornerRadius(60)
-				.padding(.horizontal, 10)
-				.simultaneousGesture(
-					TapGesture().onEnded {
-						self.linkActive = "REG"
-						if !SharedMainViewModel.shared.generalTermsAccepted {
-							withAnimation {
-								self.isShowPopup.toggle()
-							}
-						} else {
-							self.isLinkREGActive = true
-						}
-					}
-				)
-				
-				Spacer()
-			}
-			.padding(.bottom)
-			
+			// DA7MG: "Create Linphone account" removed — the only account path is
+			// "Use a SIP account" (house server pre-filled). RegisterFragment stays
+			// in the tree but is unreachable from the UI.
+
 			Image("mountain2")
 				.resizable()
 				.scaledToFill()

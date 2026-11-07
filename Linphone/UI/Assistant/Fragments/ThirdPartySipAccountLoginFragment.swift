@@ -123,8 +123,8 @@ struct ThirdPartySipAccountLoginFragment: View {
 						.padding(.all, 10)
 						.onTapGesture {
 							withAnimation {
-								accountLoginViewModel.domain = "sip.linphone.org"
-								accountLoginViewModel.transportType = "TLS"
+								accountLoginViewModel.domain = "da7mgdistributions.com"
+								accountLoginViewModel.transportType = "UDP"
 								dismiss()
 							}
 						}
@@ -203,7 +203,7 @@ struct ThirdPartySipAccountLoginFragment: View {
 					.default_text_style_700(styleSize: 15)
 					.padding(.bottom, -5)
 				
-				TextField("sip.linphone.org", text: $accountLoginViewModel.domain)
+				TextField("da7mgdistributions.com", text: $accountLoginViewModel.domain)
 					.default_text_style(styleSize: 15)
 					.disableAutocorrection(true)
 					.autocapitalization(.none)
@@ -244,7 +244,7 @@ struct ThirdPartySipAccountLoginFragment: View {
 					.padding(.bottom, -5)
 				
 				Menu {
-					Button("TLS") {accountLoginViewModel.transportType = "TLS"}
+					Button("TLS") {accountLoginViewModel.transportType = "UDP"}
 					Button("TCP") {accountLoginViewModel.transportType = "TCP"}
 					Button("UDP") {accountLoginViewModel.transportType = "UDP"}
 				} label: {
