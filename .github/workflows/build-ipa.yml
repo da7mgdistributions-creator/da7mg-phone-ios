@@ -1,0 +1,91 @@
+# DA7MG Phone (iOS) — build an unsigned, sideloadable .ipa
+#
+# Runs on a free GitHub-hosted macOS runner (public repo = free tier).
+# No Apple ID, no certificates, no secrets: the build runs with code
+# signing DISABLED (CODE_SIGNING_ALLOWED=NO) and the .app is packaged
+# into an .ipa by hand (Payload/ + zip). Alex re-signs the .ipa on his
+# own computer with his free Apple ID (AltStore / Sideloadly) — see
+# DA7MG-PHONE-IOS-BUILD-REPORT-2026-11-07.md for the install steps.
+#
+# Trigger: Actions tab -> "Build unsigned IPA" -> Run workflow,
+# or any push to master.
+name: Build unsigned IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+
+jobs:
+  build-ipa:
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16
+        run: |
+          ls -d /Applications/Xcode*.app
+          XCODE="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
+          if [ -n "$XCODE" ]; then
+            echo "Using $XCODE"
+            sudo xcode-select -s "$XCODE"
+          else
+            echo "No Xcode 16.x found, using default:"
+          fi
+          xcodebuild -version
+          swift --version
+
+      - name: Cache SwiftPM packages
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Resolve SwiftPM dependencies
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project LinphoneApp.xcodeproj \
+            -scheme Linphone
+
+      - name: Build (signing disabled)
+        run: |
+          xcodebuild \
+            -project LinphoneApp.xcodeproj \
+            -scheme Linphone \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package .app into unsigned .ipa
+        run: |
+          APP="$(find build/DerivedData/Build/Products/Release-iphoneos -maxdepth 1 -name 'LinphoneApp.app' -print -quit)"
+          test -n "$APP" || { echo "ERROR: LinphoneApp.app not found"; find build/DerivedData/Build/Products -maxdepth 2 | head -30; exit 1; }
+          echo "App: $APP"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleDisplayName" "$APP/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Print :CFBundleName" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Info.plist"
+          rm -rf Payload da7mg-phone-1.0.0-da7mg.ipa
+          mkdir Payload
+          cp -R "$APP" Payload/
+          # The built .app is named LinphoneApp.app; the display name comes
+          # from Info.plist, so the file name does not matter to iOS.
+          /usr/bin/zip -r -y da7mg-phone-1.0.0-da7mg.ipa Payload
+          ls -lh da7mg-phone-1.0.0-da7mg.ipa
+          shasum -a 256 da7mg-phone-1.0.0-da7mg.ipa
+
+      - name: Upload .ipa artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: da7mg-phone-ios-ipa
+          path: da7mg-phone-1.0.0-da7mg.ipa
+          if-no-files-found: error
+          retention-days: 90
