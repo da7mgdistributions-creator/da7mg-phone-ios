@@ -7,6 +7,16 @@
 # own computer with his free Apple ID (AltStore / Sideloadly) — see
 # DA7MG-PHONE-IOS-BUILD-REPORT-2026-11-07.md for the install steps.
 #
+# TOOLCHAIN NOTE (Nov 7, 2026): Linphone master targets the iOS 26 SDK
+# (IPHONEOS_DEPLOYMENT_TARGET 26.2) and uses AVAudioSession
+# .allowBluetoothHFP, an iOS 26-only symbol. Xcode 16.4 (iOS 18.5 SDK)
+# on macos-15 CANNOT build it — run 42387118976 failed with 3x
+# "has no member 'allowBluetoothHFP'" (exit 65); the deployment-target
+# warning was only a warning, not the failure. So this workflow MUST
+# run on macos-26 with Xcode 26.x. Do not move it back to macos-15 /
+# Xcode 16 without also patching AudioMode.swift (.allowBluetoothHFP
+# -> .allowBluetooth) and lowering IPHONEOS_DEPLOYMENT_TARGET.
+#
 # Trigger: Actions tab -> "Build unsigned IPA" -> Run workflow,
 # or any push to master.
 name: Build unsigned IPA
@@ -18,21 +28,24 @@ on:
 
 jobs:
   build-ipa:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 120
     steps:
       - name: Check out
         uses: actions/checkout@v4
 
-      - name: Select Xcode 16
+      - name: Select Xcode 26 (iOS 26 SDK)
         run: |
           ls -d /Applications/Xcode*.app
-          XCODE="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
+          XCODE="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)"
+          if [ -z "$XCODE" ]; then
+            XCODE="$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)"
+          fi
           if [ -n "$XCODE" ]; then
             echo "Using $XCODE"
             sudo xcode-select -s "$XCODE"
           else
-            echo "No Xcode 16.x found, using default:"
+            echo "No Xcode found under /Applications, using default:"
           fi
           xcodebuild -version
           swift --version
