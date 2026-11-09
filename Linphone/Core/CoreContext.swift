@@ -176,12 +176,26 @@ class CoreContext: ObservableObject {
 		
 		coreQueue.async {
 			LoggingService.Instance.logLevel = LogLevel.Debug
-			Factory.Instance.logCollectionPath = Factory.Instance.getDataDir(context: UnsafeMutablePointer<Int8>(mutating: (SharedMainViewModel.appGroupName as NSString).utf8String))
+			// DA7MG 1.0.2: never hand the SDK a group id it cannot resolve.
+			Factory.Instance.logCollectionPath = FileUtil.sdkDataDir()
 			Factory.Instance.enableLogCollection(state: LogCollectionState.Enabled)
 
 			MDMManager.shared.loadXMLConfigFromMdm(config: AppServices.config)
 
-			self.mCore = try? Factory.Instance.createSharedCoreWithConfig(config: AppServices.config, systemContext: Unmanaged.passUnretained(coreQueue).toOpaque(), appGroupId: SharedMainViewModel.appGroupName, mainCore: true)
+			if let groupId = FileUtil.sdkAppGroupId() {
+				self.mCore = try? Factory.Instance.createSharedCoreWithConfig(config: AppServices.config, systemContext: Unmanaged.passUnretained(coreQueue).toOpaque(), appGroupId: groupId, mainCore: true)
+			} else {
+				// DA7MG 1.0.2: no app group (free sideload install) — a
+				// shared core cannot be created without one, so use a
+				// regular core in the app's own sandbox. SIP calling,
+				// the dial pad and the house sign-in all work off the
+				// Core object either way.
+				self.mCore = try? Factory.Instance.createCoreWithConfig(config: AppServices.config, systemContext: Unmanaged.passUnretained(coreQueue).toOpaque())
+			}
+			guard self.mCore != nil else {
+				Log.error("[CoreContext] Linphone core could not be created (shared and regular core both failed)")
+				return
+			}
 
 			MDMManager.shared.applyMdmConfigToCore(core: self.mCore)
 			self.startObservingMDMConfigurationUpdates()
@@ -668,14 +682,25 @@ enum AppServices {
 
 		setupConfigIfNeeded()
 
-		_config = Config.newForSharedCore(
-			appGroupId: Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_NAME") as? String
-			?? {
-				fatalError("APP_GROUP_NAME not defined in Info.plist")
-			}(),
-			configFilename: "linphonerc",
-			factoryConfigFilename: FileUtil.bundleFilePath("linphonerc-factory")
-		)
+		if FileUtil.sharedContainerAvailable() {
+			_config = Config.newForSharedCore(
+				appGroupId: SharedMainViewModel.appGroupName,
+				configFilename: "linphonerc",
+				factoryConfigFilename: FileUtil.bundleFilePath("linphonerc-factory")
+			)
+		} else {
+			// DA7MG 1.0.2: no app group (free sideload install) — the
+			// shared config cannot be created without one, so build a
+			// regular config whose file lives in the app's own sandbox.
+			// setupConfigIfNeeded() above already copied the default
+			// linphonerc there.
+			let rcPath = FileUtil.sharedContainerUrl()
+				.appendingPathComponent("Library/Preferences/linphone/linphonerc").path
+			_config = Config.newWithFactory(
+				configFilename: rcPath,
+				factoryConfigFilename: FileUtil.bundleFilePath("linphonerc-factory")
+			)
+		}
 
 		return _config
 	}
@@ -689,46 +714,47 @@ enum AppServices {
 	
 	static func setupConfigIfNeeded() {
 		Log.info("Checking if linphonerc file exists already. If not, creating one as a copy of linphonerc-default")
-		if let rcDir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: SharedMainViewModel.appGroupName)?
-			.appendingPathComponent("Library/Preferences/linphone") {
-			let rcFileUrl = rcDir.appendingPathComponent("linphonerc")
-			if !FileManager.default.fileExists(atPath: rcFileUrl.path) {
-				do {
-					try FileManager.default.createDirectory(at: rcDir, withIntermediateDirectories: true)
-					if let pathToDefaultConfig = Bundle.main.path(forResource: "linphonerc-default", ofType: nil) {
-						try FileManager.default.copyItem(at: URL(fileURLWithPath: pathToDefaultConfig), to: rcFileUrl)
-						Log.info("Successfully copied linphonerc-default configuration")
-					}
-				} catch let error {
-					Log.error("Failed to copy default linphonerc file: \(error.localizedDescription)")
-				}
-			} else {
-				Log.info("Found existing linphonerc file, skip copying of linphonerc-default configuration")
-			}
-		}
-	}
-	
-	static func resetConfig() {
-		if let rcDir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: SharedMainViewModel.appGroupName)?
-			.appendingPathComponent("Library/Preferences/linphone") {
-			let rcFileUrl = rcDir.appendingPathComponent("linphonerc")
+		// DA7MG 1.0.2: sharedContainerUrl() falls back to the app's own
+		// sandbox when there is no app group, so the default config lands
+		// wherever the active config lives.
+		let rcDir = FileUtil.sharedContainerUrl().appendingPathComponent("Library/Preferences/linphone")
+		let rcFileUrl = rcDir.appendingPathComponent("linphonerc")
+		if !FileManager.default.fileExists(atPath: rcFileUrl.path) {
 			do {
 				try FileManager.default.createDirectory(at: rcDir, withIntermediateDirectories: true)
 				if let pathToDefaultConfig = Bundle.main.path(forResource: "linphonerc-default", ofType: nil) {
-					if FileManager.default.fileExists(atPath: rcFileUrl.path) {
-						try FileManager.default.removeItem(at: rcFileUrl)
-					}
 					try FileManager.default.copyItem(at: URL(fileURLWithPath: pathToDefaultConfig), to: rcFileUrl)
 					Log.info("Successfully copied linphonerc-default configuration")
-					configLock.lock()
-					_config = nil
-					configLock.unlock()
-					let _ = configIfAvailable
-					corePreferences = CorePreferences(config: config)
 				}
 			} catch let error {
 				Log.error("Failed to copy default linphonerc file: \(error.localizedDescription)")
 			}
+		} else {
+			Log.info("Found existing linphonerc file, skip copying of linphonerc-default configuration")
+		}
+	}
+	
+	static func resetConfig() {
+		// DA7MG 1.0.2: sharedContainerUrl() falls back to the app's own
+		// sandbox when there is no app group.
+		let rcDir = FileUtil.sharedContainerUrl().appendingPathComponent("Library/Preferences/linphone")
+		let rcFileUrl = rcDir.appendingPathComponent("linphonerc")
+		do {
+			try FileManager.default.createDirectory(at: rcDir, withIntermediateDirectories: true)
+			if let pathToDefaultConfig = Bundle.main.path(forResource: "linphonerc-default", ofType: nil) {
+				if FileManager.default.fileExists(atPath: rcFileUrl.path) {
+					try FileManager.default.removeItem(at: rcFileUrl)
+				}
+				try FileManager.default.copyItem(at: URL(fileURLWithPath: pathToDefaultConfig), to: rcFileUrl)
+				Log.info("Successfully copied linphonerc-default configuration")
+				configLock.lock()
+				_config = nil
+				configLock.unlock()
+				let _ = configIfAvailable
+				corePreferences = CorePreferences(config: config)
+			}
+		} catch let error {
+			Log.error("Failed to copy default linphonerc file: \(error.localizedDescription)")
 		}
 	}
 

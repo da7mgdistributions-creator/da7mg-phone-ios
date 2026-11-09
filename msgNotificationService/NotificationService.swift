@@ -96,7 +96,8 @@ class NotificationService: UNNotificationServiceExtension {
         bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
         
         LoggingService.Instance.logLevel = LogLevel.Debug
-        Factory.Instance.logCollectionPath = Factory.Instance.getDataDir(context: UnsafeMutablePointer<Int8>(mutating: (appGroupName as NSString).utf8String))
+        // DA7MG 1.0.2: never hand the SDK a group id it cannot resolve.
+        Factory.Instance.logCollectionPath = FileUtil.sdkDataDir()
         Factory.Instance.enableLogCollection(state: LogCollectionState.Enabled)
         
         Log.info("[msgNotificationService] start msgNotificationService extension")
@@ -276,6 +277,14 @@ class NotificationService: UNNotificationServiceExtension {
     
 	func createCore() -> Bool {
 		Log.info("[msgNotificationService] create core")
+
+		// DA7MG 1.0.2: no app group (free sideload install) — a shared
+		// core cannot be created without one. Returning false makes the
+		// caller show the generic notification instead of crashing.
+		guard FileUtil.sharedContainerAvailable() else {
+			Log.info("[msgNotificationService] no app group — skipping shared core")
+			return false
+		}
 
 		let factoryPath = FileUtil.bundleFilePath("linphonerc-factory")!
 		if let config = Config.newForSharedCore(appGroupId: appGroupName, configFilename: "linphonerc", factoryConfigFilename: factoryPath) {

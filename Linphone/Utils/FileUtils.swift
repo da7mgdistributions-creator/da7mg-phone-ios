@@ -23,12 +23,50 @@ import UniformTypeIdentifiers
 
 class FileUtil: NSObject {
 	
-	static let appGroupName: String = {
-		Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_NAME") as? String
-		?? {
-			fatalError("APP_GROUP_NAME not defined in Info.plist")
-		}()
-	}()
+	// DA7MG 1.0.2 — the app must run with NO app-group entitlement. A free
+	// Apple ID install cannot carry App Groups, so when AltStore signs the
+	// app the shared container does not exist. The Linphone SDK resolves
+	// every path through the app group when it is given one, and its iOS
+	// path code crashes on a nil shared container (std::string(NULL) in
+	// linphone-sdk paths-apple.mm). So every SDK boundary below hands the
+	// SDK the group id ONLY when the container actually exists; otherwise
+	// it hands it nil (the SDK's designed fallback: the app's own sandbox)
+	// or uses the regular (non-shared) core/config APIs.
+	
+	/// The shared container URL, or nil when the app has no app-group
+	/// entitlement (free sideload install).
+	public class func appGroupContainerURL() -> URL? {
+		guard let group = Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_NAME") as? String else {
+			return nil
+		}
+		return FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: group)
+	}
+	
+	/// True when the shared (app-group) container exists and can be used.
+	public class func sharedContainerAvailable() -> Bool {
+		return appGroupContainerURL() != nil
+	}
+	
+	/// The app-group id to hand to the Linphone SDK, or nil when there is
+	/// no shared container. The SDK treats nil as "use the app's own
+	/// sandbox" — that is its designed fallback.
+	public class func sdkAppGroupId() -> String? {
+		guard let group = Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_NAME") as? String,
+			FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: group) != nil else {
+			return nil
+		}
+		return group
+	}
+	
+	/// The SDK data dir for log collection, resolved without ever handing
+	/// the SDK a group id it cannot resolve.
+	public class func sdkDataDir() -> String {
+		if let group = sdkAppGroupId() {
+			return Factory.Instance.getDataDir(context: UnsafeMutablePointer<Int8>(mutating: (group as NSString).utf8String))
+		}
+		let noContext: UnsafeMutableRawPointer? = nil
+		return Factory.Instance.getDataDir(context: noContext)
+	}
 	
 	public enum MimeType {
 		case plainText
@@ -84,11 +122,13 @@ class FileUtil: NSObject {
 	}
 	
 	public class func sharedContainerUrl() -> URL {
-		let appGroupName = Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_NAME") as? String
-		?? {
-			fatalError("APP_GROUP_NAME not defined in Info.plist")
-		}()
-		return FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupName)!
+		// DA7MG 1.0.2: no app group on a free install — fall back to the
+		// app's own sandbox root, so the "Library/..." paths every caller
+		// appends (Images, Recordings, Preferences/linphone) stay correct.
+		if let container = appGroupContainerURL() {
+			return container
+		}
+		return documentsDirectory().deletingLastPathComponent()
 	}
 	
 	public class func ensureDirectoryExists(path: String) {

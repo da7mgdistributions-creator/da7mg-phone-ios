@@ -7,9 +7,10 @@
 #
 # What it changes (mirrors linphone-android-apply-da7mg-rebrand.sh):
 #   bundle IDs org.linphone.phone* -> com.da7mg.phone* (app + all extensions)
-#   app groups + keychain groups -> com.da7mg.phone.*
+#   app group name -> com.da7mg.phone.* (probe key only); app-group
+#     entitlements REMOVED (1.0.2: free Apple ID cannot carry App Groups)
 #   display name -> "DA7MG Phone" (INFOPLIST_KEY_CFBundleDisplayName + CFBundleName)
-#   version 6.3.0 -> 1.0.1-da7mg
+#   version 6.3.0 -> 1.0.2-da7mg
 #   default SIP domain sip.linphone.org -> da7mgdistributions.com, transport UDP
 #   "Create Linphone account" button removed from the login screen
 #   theme accent orange #FF5E00 -> house gold #D4AF37 (default "orange" theme)
@@ -29,26 +30,37 @@ sed -i 's/org\.linphone\.phone/com.da7mg.phone/g' Linphone/Info.plist
 sed -i 's|<string>org.linphone</string>|<string>com.da7mg.phone</string>|' Linphone/Info.plist
 grep -n 'PRODUCT_BUNDLE_IDENTIFIER' LinphoneApp.xcodeproj/project.pbxproj | sort -u
 
-echo "== 2. App groups + keychain groups -> com.da7mg.phone.* =="
-sed -i 's/group\.org\.linphone\.phone/group.com.da7mg.phone/g' Shared.xcconfig \
-  Linphone/Linphone.entitlements \
-  linphoneExtension/linphoneExtension.entitlements \
-  msgNotificationService/msgNotificationService.entitlements
+echo "== 2. App group name -> com.da7mg.phone.* (probe key only); NO app-group entitlements =="
+# Shared.xcconfig APP_GROUP_NAME is the group id the code probes for; it
+# stays a DA7MG id. But the entitlements must NOT list any app group.
+sed -i 's/group\.org\.linphone\.phone/group.com.da7mg.phone/g' Shared.xcconfig
 sed -i 's/\$(AppIdentifierPrefix)org\.linphone\.phone/$(AppIdentifierPrefix)com.da7mg.phone/g' \
   Linphone/Linphone.entitlements msgNotificationService/msgNotificationService.entitlements
-# NOTE (Nov 9, 2026): group.belledonne-communications.linphone in
-# Linphone.entitlements is Belledonne's own group. It MUST be replaced:
-# a sideloaded build re-signed under Alex's free Apple ID cannot carry
-# another team's app group, and iOS kills the app at launch when the
-# entitlement doesn't match the provisioning profile (the flash-and-close
-# crash on his iPhone 13). The DA7MG replacement is group.com.da7mg.phone.
-sed -i 's/group\.belledonne-communications\.linphone/group.com.da7mg.phone/g' \
-  Linphone/Linphone.entitlements
-grep -rn 'group.com.da7mg.phone' Shared.xcconfig Linphone/Linphone.entitlements \
+# NOTE (Nov 9, 2026, 1.0.2): a sideloaded build re-signed under Alex's free
+# Apple ID cannot carry App Groups AT ALL (paid-only capability) — and the
+# app + the Linphone SDK both crash at launch when the shared container is
+# missing (the flash-and-close crash on his iPhone 13). So the
+# com.apple.security.application-groups key is REMOVED from all three
+# entitlements files (this also drops Belledonne's own group); the app now
+# runs with no app group (regular core, app's own sandbox) and only uses
+# the group when one is actually present.
+python3 - <<'PYEOF'
+import re
+for p in ["Linphone/Linphone.entitlements",
+          "linphoneExtension/linphoneExtension.entitlements",
+          "msgNotificationService/msgNotificationService.entitlements"]:
+    s = open(p).read()
+    s2, n = re.subn(r'\t<key>com\.apple\.security\.application-groups</key>\n\t<array>\n(?:\t\t<string>[^<]*</string>\n)+\t</array>\n', '', s)
+    assert n == 1, f"{p}: expected 1 application-groups block, found {n}"
+    open(p, "w").write(s2)
+    print(f"app-group entitlement removed from {p}")
+PYEOF
+grep -rn 'group.com.da7mg.phone' Shared.xcconfig | head -4
+grep -rn 'application-groups' Linphone/Linphone.entitlements \
   linphoneExtension/linphoneExtension.entitlements \
-  msgNotificationService/msgNotificationService.entitlements | head -8
+  msgNotificationService/msgNotificationService.entitlements && echo "ERROR: app-group entitlement survived" || echo "no app-group entitlement in any entitlements file"
 
-echo "== 3. Display name -> DA7MG Phone; version 6.3.0 -> 1.0.0-da7mg =="
+echo "== 3. Display name -> DA7MG Phone; version 6.3.0 -> 1.0.2-da7mg =="
 python3 - <<'PYEOF'
 p = "LinphoneApp.xcodeproj/project.pbxproj"
 s = open(p).read()
@@ -68,13 +80,13 @@ else:
 # (all eight were 6.3.0: 2 configs x 4 targets).
 if "MARKETING_VERSION = 6.3.0;" in s:
     assert s.count("MARKETING_VERSION = 6.3.0;") == 8, "expected 8 MARKETING_VERSION 6.3.0 lines"
-    s = s.replace("MARKETING_VERSION = 6.3.0;", "MARKETING_VERSION = 1.0.1-da7mg;")
+    s = s.replace("MARKETING_VERSION = 6.3.0;", "MARKETING_VERSION = 1.0.2-da7mg;")
     print("version applied")
 else:
     print("version already applied, skipping")
 open(p, "w").write(s)
 PYEOF
-grep -n 'INFOPLIST_KEY_CFBundleDisplayName = "DA7MG Phone"\|INFOPLIST_KEY_CFBundleName = "DA7MG Phone"\|MARKETING_VERSION = 1.0.0-da7mg' \
+grep -n 'INFOPLIST_KEY_CFBundleDisplayName = "DA7MG Phone"\|INFOPLIST_KEY_CFBundleName = "DA7MG Phone"\|MARKETING_VERSION = 1.0.2-da7mg' \
   LinphoneApp.xcodeproj/project.pbxproj | head -10
 
 echo "== 4. Remove Belledonne's DEVELOPMENT_TEAM (unsigned build) =="
