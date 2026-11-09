@@ -1966,7 +1966,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0.0-da7mg;
+				MARKETING_VERSION = 1.0.1-da7mg;
 				OTHER_SWIFT_FLAGS = "$(inherited) -DUSE_CRASHLYTICS";
 				PRODUCT_BUNDLE_IDENTIFIER = com.da7mg.phone.msgNotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2008,7 +2008,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0.0-da7mg;
+				MARKETING_VERSION = 1.0.1-da7mg;
 				OTHER_SWIFT_FLAGS = "$(inherited) -DUSE_CRASHLYTICS";
 				PRODUCT_BUNDLE_IDENTIFIER = com.da7mg.phone.msgNotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2305,7 +2305,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 1.0.0-da7mg;
+				MARKETING_VERSION = 1.0.1-da7mg;
 				OTHER_SWIFT_FLAGS = "$(inherited) -DUSE_CRASHLYTICS";
 				PRODUCT_BUNDLE_IDENTIFIER = com.da7mg.phone;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2367,7 +2367,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 1.0.0-da7mg;
+				MARKETING_VERSION = 1.0.1-da7mg;
 				OTHER_SWIFT_FLAGS = "$(inherited) -DUSE_CRASHLYTICS";
 				PRODUCT_BUNDLE_IDENTIFIER = com.da7mg.phone;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2400,7 +2400,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0.0-da7mg;
+				MARKETING_VERSION = 1.0.1-da7mg;
 				PRODUCT_BUNDLE_IDENTIFIER = com.da7mg.phone.linphoneExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -2433,7 +2433,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0.0-da7mg;
+				MARKETING_VERSION = 1.0.1-da7mg;
 				PRODUCT_BUNDLE_IDENTIFIER = com.da7mg.phone.linphoneExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -2458,14 +2458,14 @@
 				INFOPLIST_FILE = intentsExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = intentsExtension;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0.0-da7mg;
+				MARKETING_VERSION = 1.0.1-da7mg;
 				PRODUCT_BUNDLE_IDENTIFIER = com.da7mg.phone.intentsExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -2493,14 +2493,14 @@
 				INFOPLIST_FILE = intentsExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = intentsExtension;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0.0-da7mg;
+				MARKETING_VERSION = 1.0.1-da7mg;
 				PRODUCT_BUNDLE_IDENTIFIER = com.da7mg.phone.intentsExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;

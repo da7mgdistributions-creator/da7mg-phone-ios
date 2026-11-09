@@ -86,19 +86,19 @@ jobs:
           /usr/libexec/PlistBuddy -c "Print :CFBundleDisplayName" "$APP/Info.plist" || true
           /usr/libexec/PlistBuddy -c "Print :CFBundleName" "$APP/Info.plist"
           /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Info.plist"
-          rm -rf Payload da7mg-phone-1.0.0-da7mg.ipa
+          rm -rf Payload da7mg-phone-1.0.1-da7mg.ipa
           mkdir Payload
           cp -R "$APP" Payload/
           # The built .app is named LinphoneApp.app; the display name comes
           # from Info.plist, so the file name does not matter to iOS.
-          /usr/bin/zip -r -y da7mg-phone-1.0.0-da7mg.ipa Payload
-          ls -lh da7mg-phone-1.0.0-da7mg.ipa
-          shasum -a 256 da7mg-phone-1.0.0-da7mg.ipa
+          /usr/bin/zip -r -y da7mg-phone-1.0.1-da7mg.ipa Payload
+          ls -lh da7mg-phone-1.0.1-da7mg.ipa
+          shasum -a 256 da7mg-phone-1.0.1-da7mg.ipa
 
       - name: Upload .ipa artifact
         uses: actions/upload-artifact@v4
         with:
           name: da7mg-phone-ios-ipa
-          path: da7mg-phone-1.0.0-da7mg.ipa
+          path: da7mg-phone-1.0.1-da7mg.ipa
           if-no-files-found: error
           retention-days: 90

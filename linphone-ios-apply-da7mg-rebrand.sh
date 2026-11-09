@@ -9,7 +9,7 @@
 #   bundle IDs org.linphone.phone* -> com.da7mg.phone* (app + all extensions)
 #   app groups + keychain groups -> com.da7mg.phone.*
 #   display name -> "DA7MG Phone" (INFOPLIST_KEY_CFBundleDisplayName + CFBundleName)
-#   version 6.3.0 -> 1.0.0-da7mg
+#   version 6.3.0 -> 1.0.1-da7mg
 #   default SIP domain sip.linphone.org -> da7mgdistributions.com, transport UDP
 #   "Create Linphone account" button removed from the login screen
 #   theme accent orange #FF5E00 -> house gold #D4AF37 (default "orange" theme)
@@ -36,8 +36,14 @@ sed -i 's/group\.org\.linphone\.phone/group.com.da7mg.phone/g' Shared.xcconfig \
   msgNotificationService/msgNotificationService.entitlements
 sed -i 's/\$(AppIdentifierPrefix)org\.linphone\.phone/$(AppIdentifierPrefix)com.da7mg.phone/g' \
   Linphone/Linphone.entitlements msgNotificationService/msgNotificationService.entitlements
-# NOTE: group.belledonne-communications.linphone in Linphone.entitlements is
-# Belledonne's own group and is left alone (inert in an unsigned build).
+# NOTE (Nov 9, 2026): group.belledonne-communications.linphone in
+# Linphone.entitlements is Belledonne's own group. It MUST be replaced:
+# a sideloaded build re-signed under Alex's free Apple ID cannot carry
+# another team's app group, and iOS kills the app at launch when the
+# entitlement doesn't match the provisioning profile (the flash-and-close
+# crash on his iPhone 13). The DA7MG replacement is group.com.da7mg.phone.
+sed -i 's/group\.belledonne-communications\.linphone/group.com.da7mg.phone/g' \
+  Linphone/Linphone.entitlements
 grep -rn 'group.com.da7mg.phone' Shared.xcconfig Linphone/Linphone.entitlements \
   linphoneExtension/linphoneExtension.entitlements \
   msgNotificationService/msgNotificationService.entitlements | head -8
@@ -62,7 +68,7 @@ else:
 # (all eight were 6.3.0: 2 configs x 4 targets).
 if "MARKETING_VERSION = 6.3.0;" in s:
     assert s.count("MARKETING_VERSION = 6.3.0;") == 8, "expected 8 MARKETING_VERSION 6.3.0 lines"
-    s = s.replace("MARKETING_VERSION = 6.3.0;", "MARKETING_VERSION = 1.0.0-da7mg;")
+    s = s.replace("MARKETING_VERSION = 6.3.0;", "MARKETING_VERSION = 1.0.1-da7mg;")
     print("version applied")
 else:
     print("version already applied, skipping")
